@@ -8,7 +8,7 @@ import threading
 from typing import Any
 
 from concord232 import concord
-from concord232.mqtt_events import PanelMqttPublisher
+from concord232.mqtt_events import PanelMqttPublisher, make_zone_handler
 from concord232.server import api
 
 try:
@@ -29,6 +29,8 @@ def _setup_mqtt(
     topic_prefix: str,
     client_id: str,
     publish_touchpad: bool,
+    publish_zones: bool,
+    discovery_prefix: str,
     tls: bool,
     logger: logging.Logger,
 ) -> None:
@@ -58,27 +60,50 @@ def _setup_mqtt(
         client.username_pw_set(username, password)
     if tls:
         client.tls_set(tls_version=ssl.PROTOCOL_TLS_CLIENT)
+    publisher = PanelMqttPublisher(
+        client,
+        topic_prefix,
+        publish_touchpad=publish_touchpad,
+        publish_zones=publish_zones,
+        discovery_prefix=discovery_prefix,
+        logger=logger,
+    )
+    # Last will marks us offline (retained) so HA availability tracks reality.
+    client.will_set(
+        publisher.status_topic, publisher.offline_payload(), qos=1, retain=True
+    )
+
+    def _on_connect(_client: Any, _userdata: Any, _flags: Any, rc: Any) -> None:
+        # Fires on every connect, including paho's automatic reconnects.
+        # The birth must be republished here: a broker disconnect publishes
+        # the retained last-will "offline", and a silent reconnect would
+        # otherwise leave it in place forever while zone states keep flowing.
+        if rc == 0:
+            publisher.publish_online()
+        else:
+            logger.warning("MQTT connect refused rc=%s", rc)
+
+    client.on_connect = _on_connect
     try:
         client.connect(host, port, 60)
     except Exception:
         logger.exception("MQTT connect failed; continuing without MQTT")
         return
     client.loop_start()
-    publisher = PanelMqttPublisher(
-        client,
-        topic_prefix,
-        publish_touchpad=publish_touchpad,
-        logger=logger,
-    )
-    publisher.publish_online()
     ctrl.register_message_handler("ALARM", publisher.publish_alarm)
     if publish_touchpad:
         ctrl.register_message_handler("TOUCHPAD", publisher.publish_touchpad)
+    if publish_zones:
+        zone_handler = make_zone_handler(publisher, ctrl.zones)
+        ctrl.register_message_handler("ZONE_STATUS", zone_handler)
+        ctrl.register_message_handler("ZONE_DATA", zone_handler)
     logger.info(
-        "MQTT panel events enabled prefix=%s host=%s:%s",
+        "MQTT panel events enabled prefix=%s host=%s:%s zones=%s discovery=%s",
         topic_prefix,
         host,
         port,
+        publish_zones,
+        discovery_prefix or "off",
     )
 
 
@@ -173,6 +198,22 @@ For more information, see: https://github.com/JasonCarter80/concord232
         help="Do not publish TOUCHPAD messages to MQTT",
     )
     parser.add_argument(
+        "--mqtt-zones",
+        default=False,
+        action="store_true",
+        help="Publish retained per-zone states to MQTT (or use [mqtt] zones in config)",
+    )
+    parser.add_argument(
+        "--mqtt-discovery-prefix",
+        default=None,
+        metavar="PREFIX",
+        help=(
+            "Publish Home Assistant MQTT discovery configs for zones under this "
+            "prefix (typically 'homeassistant'); requires --mqtt-zones "
+            "(or use [mqtt] discovery_prefix in config)"
+        ),
+    )
+    parser.add_argument(
         "--mqtt-tls",
         default=False,
         action="store_true",
@@ -218,6 +259,12 @@ For more information, see: https://github.com/JasonCarter80/concord232
         and config.has_option("mqtt", "tls")
     ):
         mqtt_tls = config.getboolean("mqtt", "tls")
+    mqtt_zones = args.mqtt_zones
+    if not mqtt_zones and "mqtt" in config and config.has_option("mqtt", "zones"):
+        mqtt_zones = config.getboolean("mqtt", "zones")
+    mqtt_discovery_prefix = args.mqtt_discovery_prefix
+    if mqtt_discovery_prefix is None:
+        mqtt_discovery_prefix = mqtt_cfg.get("discovery_prefix") or ""
 
     LOG = logging.getLogger()
     LOG.setLevel(logging.DEBUG)
@@ -277,6 +324,8 @@ For more information, see: https://github.com/JasonCarter80/concord232
                 topic_prefix=str(mqtt_topic_prefix),
                 client_id=str(mqtt_client_id),
                 publish_touchpad=mqtt_publish_touchpad,
+                publish_zones=mqtt_zones,
+                discovery_prefix=str(mqtt_discovery_prefix),
                 tls=mqtt_tls,
                 logger=LOG,
             )
