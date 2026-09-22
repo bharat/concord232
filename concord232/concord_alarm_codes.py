@@ -2,7 +2,6 @@
 Concord panel general and specific alarm type codes.
 """
 
-
 ALARM_SPECIFIC_TYPES: dict[int, str] = {
     0: "Unspecified",
     1: "Fire",

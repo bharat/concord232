@@ -402,7 +402,7 @@ class AlarmPanelInterface:
         self.reset_pending_tx()
         self._consecutive_reconnects = 0
         self.message_handlers: dict[Any, list[Callable[[dict], None]]] = {}
-        for (command_id, command_name, parser_fn) in RX_COMMANDS.values():
+        for command_id, command_name, parser_fn in RX_COMMANDS.values():
             self.message_handlers[command_id] = []
         self._active_troubles: dict[tuple[Any, ...], dict] = {}
         self._trouble_summary_logged: str = ""

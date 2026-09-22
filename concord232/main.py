@@ -253,11 +253,7 @@ For more information, see: https://github.com/JasonCarter80/concord232
             "mqtt", "publish_touchpad"
         )
     mqtt_tls = args.mqtt_tls
-    if (
-        not mqtt_tls
-        and "mqtt" in config
-        and config.has_option("mqtt", "tls")
-    ):
+    if not mqtt_tls and "mqtt" in config and config.has_option("mqtt", "tls"):
         mqtt_tls = config.getboolean("mqtt", "tls")
     mqtt_zones = args.mqtt_zones
     if not mqtt_zones and "mqtt" in config and config.has_option("mqtt", "zones"):

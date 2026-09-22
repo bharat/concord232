@@ -105,9 +105,7 @@ def make_zone_handler(
     """
 
     def _handle(decoded: Mapping[str, Any]) -> None:
-        identifier = (
-            f"p{decoded.get('partition_number')}z{decoded.get('zone_number')}"
-        )
+        identifier = f"p{decoded.get('partition_number')}z{decoded.get('zone_number')}"
         publisher.publish_zone(zones.get(identifier, decoded))
 
     return _handle
@@ -148,9 +146,7 @@ class PanelMqttPublisher:
             separators=(",", ":"),
         )
         try:
-            self._client.publish(
-                self._topic("status"), payload, qos=1, retain=True
-            )
+            self._client.publish(self._topic("status"), payload, qos=1, retain=True)
         except Exception:
             self._log.exception("MQTT publish failed (status online)")
 
@@ -219,7 +215,9 @@ class PanelMqttPublisher:
             separators=(",", ":"),
         )
 
-    def _publish_json(self, topic: str, payload: Mapping[str, Any], retain: bool) -> None:
+    def _publish_json(
+        self, topic: str, payload: Mapping[str, Any], retain: bool
+    ) -> None:
         try:
             body = json.dumps(payload, default=str, separators=(",", ":"))
             self._client.publish(topic, body, qos=1, retain=retain)

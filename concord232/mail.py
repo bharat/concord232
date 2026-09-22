@@ -19,7 +19,6 @@ class MissingEmailConfig(Exception):
     """Raised when required email configuration is missing."""
 
 
-
 def _send_system_email(config: Any, subject: str, recips: list[str], body: str) -> None:
     """
     Send an email with the given subject and body to the specified recipients using the provided config.
@@ -176,10 +175,10 @@ def send_log_event_mail(config: Any, event: Any) -> None:
         alarm_events = set(config.get("email", "alarm_events").split(","))
     except (configparser.NoOptionError, configparser.NoSectionError):
         alarm_events = {
-                "Alarm",
-                "Alarm restore",
-                "Manual fire",
-            }
+            "Alarm",
+            "Alarm restore",
+            "Manual fire",
+        }
 
     try:
         event_emails = set(config.get("email", "events").split(","))

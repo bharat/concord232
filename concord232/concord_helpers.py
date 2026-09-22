@@ -9,7 +9,6 @@ class BadMessageException(Exception):
     """Raised when a message is malformed or invalid."""
 
 
-
 def ascii_hex_to_byte(ascii_bytes: str | list[str]) -> int:
     """
     Convert two ASCII hex characters to a single byte integer.
