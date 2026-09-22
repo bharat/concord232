@@ -28,6 +28,7 @@ ignore = [
     "PLW1510", # subprocess.run without check=
     "S110",    # try-except-pass
     "SIM115",  # open() outside a context manager
+    "SIM401",  # false positive on ConfigParser: get(section, option) is not dict.get; the autofix crashed the server at startup on 2026-09-22
     "YTT301",  # sys.version[0] in the legacy status_p3.py script
 ]
 

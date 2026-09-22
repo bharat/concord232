@@ -224,8 +224,12 @@ For more information, see: https://github.com/JasonCarter80/concord232
     # Load config file
     config = configparser.ConfigParser()
     config.read(args.config)
-    cfg = config.get("server", {})
-    mqtt_cfg = config.get("mqtt", {})
+    # Do NOT rewrite these as config.get(section, {}): ConfigParser.get is
+    # get(section, option), so the dict-style default becomes an option name
+    # and crashes with AttributeError at startup (SIM401 is a false positive
+    # here and is ignored in pyproject.toml).
+    cfg = config["server"] if "server" in config else {}
+    mqtt_cfg = config["mqtt"] if "mqtt" in config else {}
 
     # Use config values if CLI args are not set
     serial = args.serial or cfg.get("serial")
