@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import socket
 import sys
-from typing import Optional, Tuple
 from urllib.parse import urlparse
 
 try:
@@ -22,7 +21,7 @@ except ImportError:
     sys.exit(1)
 
 
-def _host_port_from_url(url: str) -> Optional[Tuple[str, int]]:
+def _host_port_from_url(url: str) -> tuple[str, int] | None:
     """Return (host, port) for rfc2217:// or socket:// URLs, else None."""
     p = urlparse(url)
     if p.scheme not in ("rfc2217", "socket"):
@@ -48,7 +47,7 @@ def _tcp_preflight(host: str, port: int, timeout: float) -> bool:
             "    - Is the serial bridge / ser2net host online? Same subnet as this machine?"
         )
         print("    - Is ser2net (or similar) listening on that port?")
-        print("    - Firewall on {} allowing inbound TCP port {} ?".format(host, port))
+        print(f"    - Firewall on {host} allowing inbound TCP port {port} ?")
         print()
         print("  Quick checks from this machine:")
         print(f"    ping -c 2 {host}")

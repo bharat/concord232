@@ -12,16 +12,15 @@ import email.mime
 import email.mime.text
 import email.utils
 import smtplib
-from typing import Any, List, Set
+from typing import Any
 
 
 class MissingEmailConfig(Exception):
     """Raised when required email configuration is missing."""
 
-    pass
 
 
-def _send_system_email(config: Any, subject: str, recips: List[str], body: str) -> None:
+def _send_system_email(config: Any, subject: str, recips: list[str], body: str) -> None:
     """
     Send an email with the given subject and body to the specified recipients using the provided config.
     Args:
@@ -51,7 +50,7 @@ def _send_system_email(config: Any, subject: str, recips: List[str], body: str) 
     smtp.quit()
 
 
-def send_system_email(config: Any, deasserted: Set[str], asserted: Set[str]) -> None:
+def send_system_email(config: Any, deasserted: set[str], asserted: set[str]) -> None:
     """
     Send a system alert email listing asserted and deasserted flags.
     Args:
@@ -84,7 +83,7 @@ def send_system_email(config: Any, deasserted: Set[str], asserted: Set[str]) -> 
 
 
 def send_partition_email(
-    config: Any, partition: Any, deasserted: Set[str], asserted: Set[str]
+    config: Any, partition: Any, deasserted: set[str], asserted: set[str]
 ) -> None:
     """
     Send a partition alert email for a specific partition, listing asserted and deasserted flags.
@@ -104,7 +103,7 @@ def send_partition_email(
             config.get("partition_%i" % partition.number, "ignore_flags").split(",")
         )
     except configparser.NoOptionError:
-        ignore = set([])
+        ignore = set()
 
     deasserted = deasserted - ignore
     asserted = asserted - ignore
@@ -171,23 +170,21 @@ def send_log_event_mail(config: Any, event: Any) -> None:
     try:
         alarm_emails = set(config.get("email", "alarms").split(","))
     except (configparser.NoOptionError, configparser.NoSectionError):
-        alarm_emails = set([])
+        alarm_emails = set()
 
     try:
         alarm_events = set(config.get("email", "alarm_events").split(","))
     except (configparser.NoOptionError, configparser.NoSectionError):
-        alarm_events = set(
-            [
+        alarm_events = {
                 "Alarm",
                 "Alarm restore",
                 "Manual fire",
-            ]
-        )
+            }
 
     try:
         event_emails = set(config.get("email", "events").split(","))
     except (configparser.NoOptionError, configparser.NoSectionError):
-        event_emails = set([])
+        event_emails = set()
 
     emails = set(event_emails)
     if event.event in alarm_events:

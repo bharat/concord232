@@ -16,7 +16,7 @@ def tcp_reachable(host: str, port: int, timeout: float = 3.0) -> bool:
     try:
         with socket.create_connection((host, port), timeout=timeout):
             return True
-    except (socket.timeout, socket.error, OSError):
+    except (TimeoutError, OSError):
         return False
 
 

@@ -5,7 +5,7 @@ Flask API for the concord232 server. Provides endpoints for panel, zones, partit
 import json
 import logging
 import time
-from typing import Any, Optional
+from typing import Any
 
 import flask
 from flask import Response
@@ -13,7 +13,7 @@ from flask import Response
 from concord232.concord import AlarmPanelInterface
 
 LOG = logging.getLogger("api")
-CONTROLLER: Optional[AlarmPanelInterface] = None
+CONTROLLER: AlarmPanelInterface | None = None
 app = flask.Flask("concord232")
 LOG.info("API Code Loaded")
 

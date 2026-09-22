@@ -2,7 +2,7 @@
 Data models for zones, partitions, system, log events, users, and extension hooks for concord232.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 MSG_TYPES = [
     "UNUSED",
@@ -73,12 +73,12 @@ MSG_TYPES = [
 ]
 
 
-class Zone(object):
+class Zone:
     """
     Represents a security system zone, including its number, name, state, and flags.
     """
 
-    STATUS_FLAGS: List[str] = [
+    STATUS_FLAGS: list[str] = [
         "Faulted",
         "Trouble",
         "Bypass",
@@ -88,7 +88,7 @@ class Zone(object):
         "Reserved",
     ]
 
-    TYPE_FLAGS: List[List[str]] = [
+    TYPE_FLAGS: list[list[str]] = [
         [
             "Fire",
             "24 hour",
@@ -129,9 +129,9 @@ class Zone(object):
         """
         self.number: int = number
         self.name: str = "Unknown"
-        self.state: Optional[Any] = None
-        self.condition_flags: List[str] = []
-        self.type_flags: List[str] = []
+        self.state: Any | None = None
+        self.condition_flags: list[str] = []
+        self.type_flags: list[str] = []
 
     @property
     def bypassed(self) -> bool:
@@ -141,12 +141,12 @@ class Zone(object):
         return "Inhibit" in self.condition_flags or "Bypass" in self.condition_flags
 
 
-class Partition(object):
+class Partition:
     """
     Represents a security system partition, including its number and condition flags.
     """
 
-    CONDITION_FLAGS: List[List[str]] = [
+    CONDITION_FLAGS: list[list[str]] = [
         [
             "Bypass code required",
             "Fire trouble",
@@ -216,8 +216,8 @@ class Partition(object):
             number (int): Partition number.
         """
         self.number: int = number
-        self.condition_flags: List[str] = []
-        self.last_user: Optional[Any] = None
+        self.condition_flags: list[str] = []
+        self.last_user: Any | None = None
 
     @property
     def armed(self) -> bool:
@@ -227,12 +227,12 @@ class Partition(object):
         return "Armed" in self.condition_flags
 
 
-class System(object):
+class System:
     """
     Represents the overall system state, including panel ID and status flags.
     """
 
-    STATUS_FLAGS: List[List[str]] = [
+    STATUS_FLAGS: list[list[str]] = [
         [
             "Line seizure",
             "Off hook",
@@ -329,17 +329,17 @@ class System(object):
         """
         Initialize a System object.
         """
-        self.panel_id: Optional[int] = None
-        self.status_flags: List[str] = []
-        self.last_event: Optional[Any] = None
+        self.panel_id: int | None = None
+        self.status_flags: list[str] = []
+        self.last_event: Any | None = None
 
 
-class LogEvent(object):
+class LogEvent:
     """
     Represents a log event from the panel, including event codes and metadata.
     """
 
-    ZONE_EVENT_CODES: Dict[int, str] = {
+    ZONE_EVENT_CODES: dict[int, str] = {
         0: "Alarm",
         1: "Alarm restore",
         2: "Bypass",
@@ -355,7 +355,7 @@ class LogEvent(object):
         12: "Start of cross time",
     }
 
-    NONE_EVENT_CODES: Dict[int, str] = {
+    NONE_EVENT_CODES: dict[int, str] = {
         17: "Special expansion event",
         18: "Duress",
         19: "Manual fire",
@@ -385,7 +385,7 @@ class LogEvent(object):
         127: "Data lost",
     }
 
-    DEVICE_EVENT_CODES: Dict[int, str] = {
+    DEVICE_EVENT_CODES: dict[int, str] = {
         24: "Control box tamper",
         25: "Control box tamper restore",
         26: "AC fail",
@@ -400,7 +400,7 @@ class LogEvent(object):
         37: "Expander trouble restore",
     }
 
-    USER_EVENT_CODES: Dict[int, str] = {
+    USER_EVENT_CODES: dict[int, str] = {
         13: "User code added",
         14: "User code deleted",
         15: "User code changed",
@@ -414,19 +414,19 @@ class LogEvent(object):
         """
         self.number: int = 0
         self.log_size: int = 0
-        self.event_type: Optional[int] = None
-        self.reportable: Optional[Any] = None
+        self.event_type: int | None = None
+        self.reportable: Any | None = None
         self.zone_user_device: int = 0
         self.partition_number: int = 0
-        self.timestamp: Optional[Any] = None
-        self.event_string_val: Optional[str] = None
+        self.timestamp: Any | None = None
+        self.event_string_val: str | None = None
 
     @property
-    def event(self) -> Optional[str]:
+    def event(self) -> str | None:
         return self.event_string_val
 
     def get_event_string(self) -> str:
-        codes: Dict[int, str] = {
+        codes: dict[int, str] = {
             **self.ZONE_EVENT_CODES,
             **self.NONE_EVENT_CODES,
             **self.DEVICE_EVENT_CODES,
@@ -439,7 +439,7 @@ class LogEvent(object):
         else:
             return "Unknown event (no type)"
 
-    def get_event_string_for_target(self, target: Optional[int]) -> str:
+    def get_event_string_for_target(self, target: int | None) -> str:
         if self.event_type is not None and target is not None:
             return f"Unknown event {self.event_type} for target {target}"
         elif self.event_type is not None:
@@ -448,12 +448,12 @@ class LogEvent(object):
             return "Unknown event (no type) for unknown target"
 
 
-class User(object):
+class User:
     """
     Represents a user in the system, including PIN and authority flags.
     """
 
-    AUTHORITY_FLAGS: Tuple[List[str], List[str]] = (
+    AUTHORITY_FLAGS: tuple[list[str], list[str]] = (
         [
             "Reserved",
             "Arm only",
@@ -481,12 +481,12 @@ class User(object):
             number (int): User number.
         """
         self.number: int = number
-        self.pin: List[Any] = []
-        self.authority_flags: List[str] = []
-        self.authorized_partitions: List[Any] = []
+        self.pin: list[Any] = []
+        self.authority_flags: list[str] = []
+        self.authorized_partitions: list[Any] = []
 
 
-class concord232Extension(object):
+class concord232Extension:
     """
     Extension hook class for custom integrations with the controller.
     """
@@ -505,7 +505,6 @@ class concord232Extension(object):
         Args:
             zone: Zone object.
         """
-        pass
 
     def partition_status(self, partition: Any) -> None:
         """
@@ -513,7 +512,6 @@ class concord232Extension(object):
         Args:
             partition: Partition object.
         """
-        pass
 
     def device_command(self, house: Any, unit: Any, command: Any) -> None:
         """
@@ -523,7 +521,6 @@ class concord232Extension(object):
             unit: Unit code.
             command: Command code.
         """
-        pass
 
     def system_status(self, system: Any) -> None:
         """
@@ -531,7 +528,6 @@ class concord232Extension(object):
         Args:
             system: System object.
         """
-        pass
 
     def log_event(self, event: Any) -> None:
         """
@@ -539,4 +535,3 @@ class concord232Extension(object):
         Args:
             event: LogEvent object.
         """
-        pass

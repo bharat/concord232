@@ -8,8 +8,8 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Callable, Mapping
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 LOG = logging.getLogger(__name__)
 
@@ -17,17 +17,17 @@ SCHEMA_VERSION = 1
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _iso(dt: datetime) -> str:
-    return dt.astimezone(timezone.utc).isoformat()
+    return dt.astimezone(UTC).isoformat()
 
 
 def build_alarm_payload(
     decoded: Mapping[str, Any],
     *,
-    received_at: Optional[datetime] = None,
+    received_at: datetime | None = None,
 ) -> dict[str, Any]:
     when = received_at if received_at is not None else _utc_now()
     return {
@@ -49,11 +49,11 @@ def build_alarm_payload(
 def build_touchpad_payload(
     decoded: Mapping[str, Any],
     *,
-    received_at: Optional[datetime] = None,
+    received_at: datetime | None = None,
 ) -> dict[str, Any]:
     when = received_at if received_at is not None else _utc_now()
     ts = decoded.get("timestamp")
-    panel_ts: Optional[str] = None
+    panel_ts: str | None = None
     if isinstance(ts, datetime):
         panel_ts = _iso(ts)
     body: dict[str, Any] = {
@@ -124,7 +124,7 @@ class PanelMqttPublisher:
         publish_touchpad: bool = True,
         publish_zones: bool = False,
         discovery_prefix: str | None = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ) -> None:
         self._client = client
         self._prefix = topic_prefix.strip().strip("/")

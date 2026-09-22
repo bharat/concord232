@@ -79,7 +79,7 @@ def test_arm_partition(mock_session):
     result = client.send_keys("\x02", group=True, partition=2)
     assert result is True
     # Check that partition param was sent
-    args, kwargs = mock_instance.get.call_args
+    _args, kwargs = mock_instance.get.call_args
     assert kwargs["params"]["partition"] == "2"
 
 
@@ -91,7 +91,7 @@ def test_disarm_partition(mock_session):
     # Simulate disarming partition 3 with pin '1234'
     result = client.send_keys("1234", group=True, partition=3)
     assert result is True
-    args, kwargs = mock_instance.get.call_args
+    _args, kwargs = mock_instance.get.call_args
     assert kwargs["params"]["partition"] == "3"
 
 
@@ -103,7 +103,7 @@ def test_send_keys_partition(mock_session):
     # Simulate sending keys to partition 4
     result = client.send_keys("99*", group=False, partition=4)
     assert result is True
-    args, kwargs = mock_instance.get.call_args
+    _args, kwargs = mock_instance.get.call_args
     assert kwargs["params"]["partition"] == "4"
 
 

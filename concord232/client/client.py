@@ -1,11 +1,11 @@
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, cast
 
 import requests
 
 DEFAULT_TIMEOUT = 10.0
 
 
-class Client(object):
+class Client:
     """
     Client for interacting with the concord232 server HTTP API.
     Provides methods to list zones, partitions, arm/disarm, send keys, and get version info.
@@ -25,7 +25,7 @@ class Client(object):
         self._last_event_index = 0
         self._timeout = timeout
 
-    def list_zones(self) -> List[Dict[str, Any]]:
+    def list_zones(self) -> list[dict[str, Any]]:
         """
         Retrieve the list of zones from the server.
         Returns:
@@ -33,9 +33,9 @@ class Client(object):
         """
         r = self._session.get(self._url + "/zones", timeout=self._timeout)
         data = r.json()
-        return cast(List[Dict[str, Any]], data["zones"])
+        return cast(list[dict[str, Any]], data["zones"])
 
-    def list_partitions(self) -> List[Dict[str, Any]]:
+    def list_partitions(self) -> list[dict[str, Any]]:
         """
         Retrieve the list of partitions from the server.
         Returns:
@@ -43,9 +43,9 @@ class Client(object):
         """
         r = self._session.get(self._url + "/partitions", timeout=self._timeout)
         data = r.json()
-        return cast(List[Dict[str, Any]], data["partitions"])
+        return cast(list[dict[str, Any]], data["partitions"])
 
-    def arm(self, level: str, option: Optional[str] = None) -> bool:
+    def arm(self, level: str, option: str | None = None) -> bool:
         """
         Arm the system to the specified level with an optional option.
         Args:
@@ -54,7 +54,7 @@ class Client(object):
         Returns:
             bool: True if successful, False otherwise.
         """
-        params: Dict[str, str] = {"cmd": "arm", "level": level}
+        params: dict[str, str] = {"cmd": "arm", "level": level}
         if option is not None:
             params["option"] = option
         r = self._session.get(
@@ -70,7 +70,7 @@ class Client(object):
         Returns:
             bool: True if successful, False otherwise.
         """
-        params: Dict[str, str] = {"cmd": "disarm", "master_pin": master_pin}
+        params: dict[str, str] = {"cmd": "disarm", "master_pin": master_pin}
         r = self._session.get(
             self._url + "/command", params=params, timeout=self._timeout
         )
@@ -86,7 +86,7 @@ class Client(object):
         Returns:
             bool: True if successful, False otherwise.
         """
-        params: Dict[str, str] = {
+        params: dict[str, str] = {
             "cmd": "keys",
             "keys": keys,
             "group": str(group).lower(),

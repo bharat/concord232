@@ -16,17 +16,17 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, List
 
 # Run with `python scripts/test_superbus.py` from the repo root without `pip install -e .`.
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-import serial  # noqa: E402
+import serial
 
-from concord232.concord import (  # noqa: E402
+from concord232.concord import (
     CONCORD_BAUD,
     CONCORD_BYTESIZE,
     CONCORD_PARITY,
@@ -35,7 +35,7 @@ from concord232.concord import (  # noqa: E402
     compute_checksum,
     encode_message_to_ascii,
 )
-from concord232.concord_commands import (  # noqa: E402
+from concord232.concord_commands import (
     EQPT_LIST_REQ_TYPES,
     build_cmd_equipment_list,
     build_dynamic_data_refresh,
@@ -56,14 +56,14 @@ def open_serial(url: str, read_timeout: float) -> serial.Serial:
     )
 
 
-def build_tx_payload(body: List[int]) -> List[int]:
+def build_tx_payload(body: list[int]) -> list[int]:
     """Append checksum the same way as AlarmPanelInterface.enqueue_msg_for_tx."""
     msg = body[:]
     msg.append(compute_checksum(msg))
     return msg
 
 
-def frame_for_wire(msg_with_checksum: List[int]) -> bytes:
+def frame_for_wire(msg_with_checksum: list[int]) -> bytes:
     framed = MSG_START + encode_message_to_ascii(msg_with_checksum)
     return framed.encode("latin-1")
 
@@ -107,7 +107,7 @@ def read_for_seconds(ser: serial.Serial, seconds: float, chunk_timeout: float) -
     return bytes(out)
 
 
-REQUEST_BUILDERS: dict[str, Callable[[], List[int]]] = {
+REQUEST_BUILDERS: dict[str, Callable[[], list[int]]] = {
     "dynamic": build_dynamic_data_refresh,
     "full": lambda: build_cmd_equipment_list(0),
     "zones": lambda: build_cmd_equipment_list(EQPT_LIST_REQ_TYPES["ZONE_DATA"]),
@@ -177,7 +177,7 @@ def run() -> int:
             print(format_rx(data))
             return 0
 
-        order: List[str]
+        order: list[str]
         if args.request == "all":
             order = ["full", "zones", "partitions", "dynamic"]
         else:

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List
+from typing import Any
 
 from concord232.concord import AlarmPanelInterface, compute_checksum
 from concord232.concord_commands import build_cmd_alarm_trouble
@@ -8,7 +8,7 @@ from concord232.concord_commands import build_cmd_alarm_trouble
 def test_alarm_message_handler_receives_decoded_command() -> None:
     log = logging.getLogger("test")
     panel = AlarmPanelInterface("fake", 0.25, log)
-    seen: List[Any] = []
+    seen: list[Any] = []
 
     def capture(cmd: dict) -> None:
         seen.append(cmd)

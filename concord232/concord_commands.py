@@ -4,7 +4,7 @@ from the alarm panel, plus code to tect mappings.
 """
 
 import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from concord232.concord_alarm_codes import ALARM_CODES
 from concord232.concord_helpers import BadMessageException
@@ -163,7 +163,7 @@ ALARM_SOURCE_TYPE = {
 }
 
 # Reverse map of alarm source name to type code
-ALARM_SOURCE_NAME = dict((v, k) for k, v in ALARM_SOURCE_TYPE.items())
+ALARM_SOURCE_NAME = {v: k for k, v in ALARM_SOURCE_TYPE.items()}
 
 # Concord touchpad message types
 TOUCHPAD_MSG_TYPE = {
@@ -204,7 +204,7 @@ EQPT_LIST_REQ_TYPES = {
 
 
 def ck_msg_len(
-    msg: List[Any], cmd: Any, desired_len: int, exact_len: bool = True
+    msg: list[Any], cmd: Any, desired_len: int, exact_len: bool = True
 ) -> None:
     """
     *desired_len* is the length value that would be in the 'last
@@ -228,7 +228,7 @@ def ck_msg_len(
         )
 
 
-def bytes_to_num(data: List[int]) -> int:
+def bytes_to_num(data: list[int]) -> int:
     """*data* must be at least 4 bytes long, big-endian order."""
     assert len(data) >= 4
     num = data[3]
@@ -238,11 +238,11 @@ def bytes_to_num(data: List[int]) -> int:
     return num
 
 
-def num_to_bytes(num: int) -> List[int]:
+def num_to_bytes(num: int) -> list[int]:
     return [0xFF & (num >> 24), 0xFF & (num >> 16), 0xFF & (num >> 8), 0xFF & num]
 
 
-def cmd_panel_type(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_panel_type(self: Any, msg: list[Any]) -> dict[str, Any]:
     ck_msg_len(msg, 0x01, 0x0B)
     assert msg[1] == 0x01, "Unexpected command type 0x%02x" % msg[1]
     panel_type = msg[2]
@@ -259,7 +259,7 @@ def cmd_panel_type(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return d
 
 
-def cmd_automation_event_lost(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_automation_event_lost(self: Any, msg: list[Any]) -> dict[str, Any]:
     """
     (From protocol docs) Panel's automation buffer has overflowed.
     Automation modules should respond to this with request for Dynamic
@@ -268,13 +268,13 @@ def cmd_automation_event_lost(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return {}
 
 
-def build_state_list(state_code: int, state_dict: Dict[int, str]) -> List[str]:
+def build_state_list(state_code: int, state_dict: dict[int, str]) -> list[str]:
     if state_code in state_dict:
         return [state_dict[state_code]]
     return ["Unknown"]
 
 
-def cmd_zone_status(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_zone_status(self: Any, msg: list[Any]) -> dict[str, Any]:
     ck_msg_len(msg, 0x21, 0x07)
     assert msg[1] == 0x21, "Unexpected command type 0x%02x" % msg[1]
     d = {
@@ -302,7 +302,7 @@ def cmd_zone_status(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return d
 
 
-def cmd_zone_data(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_zone_data(self: Any, msg: list[Any]) -> dict[str, Any]:
     ck_msg_len(msg, 0x03, 0x09, exact_len=False)
     assert msg[1] == 0x03, "Unexpected command type 0x%02x" % msg[1]
     d = {
@@ -324,7 +324,7 @@ def cmd_zone_data(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return d
 
 
-def cmd_arming_level(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_arming_level(self: Any, msg: list[Any]) -> dict[str, Any]:
     ck_msg_len(msg, (0x22, 0x01), 0x08)
     assert (msg[1], msg[2]) == (0x22, 0x01), "Unexpected command type"
     d = {
@@ -360,14 +360,14 @@ def cmd_arming_level(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return d
 
 
-def decode_alarm_type(gen_code: int, spec_code: int) -> Tuple[str, str]:
+def decode_alarm_type(gen_code: int, spec_code: int) -> tuple[str, str]:
     if gen_code not in ALARM_CODES:
         return "Unknown", "Unknown"
     gen_type, spec_type_dict = ALARM_CODES[gen_code]
     return gen_type, spec_type_dict.get(spec_code, "Unknown")
 
 
-def cmd_entry_exit_delay(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_entry_exit_delay(self: Any, msg: list[Any]) -> dict[str, Any]:
     assert (msg[1], msg[2]) == (0x22, 0x03), "Unexpected command type"
     ck_msg_len(msg, (0x22, 0x03), 0x08)
     d = {
@@ -399,7 +399,7 @@ def cmd_entry_exit_delay(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return d
 
 
-def cmd_alarm_trouble(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_alarm_trouble(self: Any, msg: list[Any]) -> dict[str, Any]:
     assert (msg[1], msg[2]) == (0x22, 0x02), "Unexpected command type"
     ck_msg_len(msg, (0x22, 0x02), 0x0D)
     d = {
@@ -427,7 +427,7 @@ def build_cmd_alarm_trouble(
     general_type: int,
     specific_type: int,
     event_data: int = 0,
-) -> List[int]:
+) -> list[int]:
     assert source_type in ALARM_SOURCE_NAME
     source_code = ALARM_SOURCE_NAME[source_type]
     msg = (
@@ -440,7 +440,7 @@ def build_cmd_alarm_trouble(
     return msg
 
 
-def cmd_touchpad(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_touchpad(self: Any, msg: list[Any]) -> dict[str, Any]:
     assert (msg[1], msg[2]) == (0x22, 0x09), "Unexpected command type"
     ck_msg_len(msg, (0x22, 0x09), 0x06, exact_len=False)
     d = {
@@ -456,11 +456,11 @@ def cmd_touchpad(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return d
 
 
-def cmd_siren_sync(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_siren_sync(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_partition_data(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_partition_data(self: Any, msg: list[Any]) -> dict[str, Any]:
     assert msg[1] == 0x04, "Unexpected command type"
     ck_msg_len(msg, 0x04, 0x05, exact_len=False)
     d = {
@@ -487,14 +487,14 @@ def cmd_partition_data(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return d
 
 
-def bcd_decode(chars: List[int]) -> int:
+def bcd_decode(chars: list[int]) -> int:
     val = 0
     for c in chars:
         val = 100 * val + 10 * ((c >> 4) & 0xF) + (c & 0xF)
     return val
 
 
-def cmd_user_data(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_user_data(self: Any, msg: list[Any]) -> dict[str, Any]:
     assert msg[1] == 0x09, "Unexpected command type"
     ck_msg_len(msg, 0x09, 0x04, exact_len=False)
     d = {
@@ -506,31 +506,31 @@ def cmd_user_data(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return d
 
 
-def cmd_sched_data(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_sched_data(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_sched_event_data(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_sched_event_data(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_light_attach(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_light_attach(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_siren_setup(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_siren_setup(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_siren_go(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_siren_go(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_siren_stop(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_siren_stop(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_feat_state(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_feat_state(self: Any, msg: list[Any]) -> dict[str, Any]:
     assert (msg[1], msg[2]) == (0x22, 0x0C), "Unexpected command type"
     ck_msg_len(msg, (0x22, 0x0C), 0x06)
     d = {
@@ -541,27 +541,27 @@ def cmd_feat_state(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return d
 
 
-def cmd_temp(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_temp(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_time_and_date(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_time_and_date(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_lights_state(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_lights_state(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_user_lights(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_user_lights(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_keyfob(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_keyfob(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_clear_image(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_clear_image(self: Any, msg: list[Any]) -> dict[str, Any]:
     """
     (From protocol docs) This command is sent on panel power up
     initialization and when a communication failure restoral with the
@@ -575,23 +575,23 @@ def cmd_clear_image(self: Any, msg: List[Any]) -> Dict[str, Any]:
     return {}
 
 
-def cmd_eqpt_list_done(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_eqpt_list_done(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_superbus_dev_data(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_superbus_dev_data(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_superbus_dev_cap(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_superbus_dev_cap(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def cmd_output_data(self: Any, msg: List[Any]) -> Dict[str, Any]:
+def cmd_output_data(self: Any, msg: list[Any]) -> dict[str, Any]:
     return {}
 
 
-def build_cmd_equipment_list(request_type: int = 0) -> List[int]:
+def build_cmd_equipment_list(request_type: int = 0) -> list[int]:
     assert request_type in EQPT_LIST_REQ_TYPES.values()
     if request_type == 0:
         return [0x2, 0x2]
@@ -599,13 +599,13 @@ def build_cmd_equipment_list(request_type: int = 0) -> List[int]:
         return [0x3, 0x2, request_type]
 
 
-def build_dynamic_data_refresh() -> List[int]:
+def build_dynamic_data_refresh() -> list[int]:
     return [0x02, 0x20]
 
 
 def build_keypress(
-    keys: List[int], partition: int = 1, area: int = 0, no_check: bool = False
-) -> List[int]:
+    keys: list[int], partition: int = 1, area: int = 0, no_check: bool = False
+) -> list[int]:
     assert len(keys) < 55
     if not no_check:
         for k in keys:

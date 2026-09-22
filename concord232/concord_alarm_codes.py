@@ -2,9 +2,8 @@
 Concord panel general and specific alarm type codes.
 """
 
-from typing import Dict, Tuple
 
-ALARM_SPECIFIC_TYPES: Dict[int, str] = {
+ALARM_SPECIFIC_TYPES: dict[int, str] = {
     0: "Unspecified",
     1: "Fire",
     2: "Fire Panic",
@@ -47,7 +46,7 @@ ALARM_SPECIFIC_TYPES: Dict[int, str] = {
     39: "Water Alarm",
 }
 
-FIRE_SPECIFIC_TYPES: Dict[int, str] = {
+FIRE_SPECIFIC_TYPES: dict[int, str] = {
     0: "Unspecified",
     1: "Hardwire",
     2: "Ground Fault",
@@ -70,7 +69,7 @@ FIRE_SPECIFIC_TYPES: Dict[int, str] = {
     19: "Liquid Level Trouble",
 }
 
-BYPASS_SPECIFIC_TYPES: Dict[int, str] = {
+BYPASS_SPECIFIC_TYPES: dict[int, str] = {
     0: "Direct Bypass",
     1: "Indirect Bypass",
     2: "Swinger Bypass",
@@ -89,7 +88,7 @@ OPENING_SPECIFIC_TYPES = {
     8: "Remote Open",
 }
 
-CLOSING_SPECIFIC_TYPES: Dict[int, str] = {
+CLOSING_SPECIFIC_TYPES: dict[int, str] = {
     0: "Normal Close",
     1: "Early Close",
     2: "Late Close",
@@ -102,7 +101,7 @@ CLOSING_SPECIFIC_TYPES: Dict[int, str] = {
     9: "Recent Close (Concord only)",
 }
 
-PARTITION_CONFIG_CHG_SPECIFIC_TYPES: Dict[int, str] = {
+PARTITION_CONFIG_CHG_SPECIFIC_TYPES: dict[int, str] = {
     0: "User Access Code Added",
     1: "User Access Code Deleted",
     2: "User Access Code Changed",
@@ -115,7 +114,7 @@ PARTITION_CONFIG_CHG_SPECIFIC_TYPES: Dict[int, str] = {
     9: "Zone Deleted",
 }
 
-PARTITION_EVENT_SPECIFIC_TYPES: Dict[int, str] = {
+PARTITION_EVENT_SPECIFIC_TYPES: dict[int, str] = {
     0: "Schedule On",
     1: "Schedule Off",
     2: "Latchkey On",
@@ -135,7 +134,7 @@ PARTITION_EVENT_SPECIFIC_TYPES: Dict[int, str] = {
     16: "Arming Protest Ended",
 }
 
-PARTITION_TEST_SPECIFIC_TYPES: Dict[int, str] = {
+PARTITION_TEST_SPECIFIC_TYPES: dict[int, str] = {
     0: "Manual Phone Test",
     1: "Auto Phone Test",
     2: "Auto Phone Test with existing trouble",
@@ -154,7 +153,7 @@ PARTITION_TEST_SPECIFIC_TYPES: Dict[int, str] = {
     15: "Fire Drill Started",
 }
 
-SYSTEM_TROUBLE_SPECIFIC_TYPES: Dict[int, str] = {
+SYSTEM_TROUBLE_SPECIFIC_TYPES: dict[int, str] = {
     0: "Bus Receiver Failure",
     1: "Bus Antenna Tamper",
     2: "Main Low Battery",
@@ -208,7 +207,7 @@ SYSTEM_TROUBLE_SPECIFIC_TYPES: Dict[int, str] = {
     51: "Printer Paper Out Trouble",
 }
 
-SYSTEM_CONFIG_CHG_SPECIFIC_TYPES: Dict[int, str] = {
+SYSTEM_CONFIG_CHG_SPECIFIC_TYPES: dict[int, str] = {
     0: "Program Mode Entry",
     1: "Program Mode Exit Without Change",
     2: "Program Mode Exit With Change",
@@ -227,7 +226,7 @@ SYSTEM_CONFIG_CHG_SPECIFIC_TYPES: Dict[int, str] = {
     15: "Installer Code Changed",
 }
 
-SYSTEM_EVENT_SPECIFIC_TYPES: Dict[int, str] = {
+SYSTEM_EVENT_SPECIFIC_TYPES: dict[int, str] = {
     0: "Callback Requested",
     1: "Output Activity (not used, see 18.5 & 18.6)",
     2: "Buddy Reception",
@@ -237,7 +236,7 @@ SYSTEM_EVENT_SPECIFIC_TYPES: Dict[int, str] = {
     6: "Output Off",
 }
 
-ALARM_CODES: Dict[int, Tuple[str, Dict[int, str]]] = {
+ALARM_CODES: dict[int, tuple[str, dict[int, str]]] = {
     # General type -> (General type name, Specific type -> Specific type name))
     1: ("Alarm", ALARM_SPECIFIC_TYPES),
     2: ("Alarm Cancel", ALARM_SPECIFIC_TYPES),

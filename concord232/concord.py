@@ -1,8 +1,9 @@
 import sys
 import time
 import traceback
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, cast
 
 import serial
 
@@ -19,7 +20,7 @@ from concord232.concord_helpers import ascii_hex_to_byte, total_secs
 
 is_py2 = sys.version[0] == "2"
 if is_py2:
-    import Queue as Queue
+    import Queue
 else:
     import queue as Queue
 
@@ -61,7 +62,7 @@ STOP = "STOP"
 
 # Trouble / restoral general-type pairs: when a restoral is received, the
 # matching active trouble (same spec + source + partition) is cleared.
-TROUBLE_RESTORAL_PAIRS: Tuple[Tuple[int, int], ...] = (
+TROUBLE_RESTORAL_PAIRS: tuple[tuple[int, int], ...] = (
     (1, 3),  # Alarm / Alarm Restoral
     (4, 5),  # Fire trouble / restoral
     (6, 7),  # Non-fire trouble / restoral
@@ -79,7 +80,7 @@ def _format_trouble_line_from_alarm(d: dict) -> str:
     return f"{st} (source {sn}): {ag} — {asp}"
 
 
-def _trouble_state_sort_key(item: Tuple[Tuple, dict]) -> Tuple[Any, ...]:
+def _trouble_state_sort_key(item: tuple[tuple, dict]) -> tuple[Any, ...]:
     _, d = item
     if d.get("source_type") == "Bus Device":
         return (0, d.get("source_number", 0), d.get("alarm_specific_type", ""))
@@ -101,8 +102,8 @@ def _detail_from_trouble_store(store: dict) -> str:
     return "; ".join(parts)
 
 
-def _buses_from_trouble_store(store: dict) -> List[int]:
-    out: List[int] = []
+def _buses_from_trouble_store(store: dict) -> list[int]:
+    out: list[int] = []
     for d in store.values():
         if d.get("source_type") == "Bus Device":
             n = d.get("source_number")
@@ -158,7 +159,7 @@ class BadChecksum(CommException):
     pass
 
 
-class SerialInterface(object):
+class SerialInterface:
     def __init__(
         self,
         dev_name: str,
@@ -198,7 +199,7 @@ class SerialInterface(object):
     def message_chars_maybe_available(self) -> bool:
         return cast(bool, self.serdev.inWaiting() > 0)
 
-    def wait_for_message_start(self) -> Optional[str]:
+    def wait_for_message_start(self) -> str | None:
         """
         Read from the serial port until the message-start character is
         received, discarding other characters.  Special control
@@ -235,13 +236,13 @@ class SerialInterface(object):
         c = raw.decode("latin-1")
         return cast(str, c)
 
-    def _try_to_read(self, n: int) -> Tuple[List[str], List[str]]:
+    def _try_to_read(self, n: int) -> tuple[list[str], list[str]]:
         """
         Try to read *n* message chars from the serial port; if there is a
         timeout raise an exception.  Returns tuple of (message chars, control chars).
         """
-        ctrl_chars: List[str] = []
-        chars_read: List[str] = []
+        ctrl_chars: list[str] = []
+        chars_read: list[str] = []
         while len(chars_read) < n:
             one_char = self._read1()
             if one_char == "":
@@ -254,7 +255,7 @@ class SerialInterface(object):
                 chars_read.append(one_char)
         return chars_read, ctrl_chars
 
-    def read_next_message(self) -> List[int]:
+    def read_next_message(self) -> list[int]:
         """
         Read the next message from the serial port, assuming the
         message-start character has just been read.
@@ -316,7 +317,7 @@ class SerialInterface(object):
 
         return msg_bin
 
-    def write_message(self, msg: List[int]) -> None:
+    def write_message(self, msg: list[int]) -> None:
         """
         *msg* is a message in binary format, with a valid checksum,
         but no leading message-start character.  This method writes an
@@ -336,7 +337,7 @@ class SerialInterface(object):
         self.serdev.close()
 
 
-def compute_checksum(bin_msg: List[int]) -> int:
+def compute_checksum(bin_msg: list[int]) -> int:
     """Compute checksum over all of *bin_msg*."""
     assert len(bin_msg) > 0
     cksum = 0
@@ -345,7 +346,7 @@ def compute_checksum(bin_msg: List[int]) -> int:
     return cksum % 256
 
 
-def validate_message_checksum(bin_msg: List[int]) -> bool:
+def validate_message_checksum(bin_msg: list[int]) -> bool:
     """
     *bin_msg* is an array of bytes that have already been decoded from
     the Automation Module ascii format, e.g. an array like [ 0x2A,
@@ -359,19 +360,19 @@ def validate_message_checksum(bin_msg: List[int]) -> bool:
     return compute_checksum(bin_msg[:-1]) == bin_msg[-1]
 
 
-def update_message_checksum(bin_msg: List[int]) -> None:
+def update_message_checksum(bin_msg: list[int]) -> None:
     assert len(bin_msg) >= 2
     bin_msg[-1] = compute_checksum(bin_msg[:-1])
 
 
-def encode_message_to_ascii(bin_msg: List[int]) -> str:
+def encode_message_to_ascii(bin_msg: list[int]) -> str:
     s = ""
     for b in bin_msg:
         s += "%02x" % b
     return s.upper()
 
 
-def decode_message_from_ascii(ascii_msg: str) -> List[int]:
+def decode_message_from_ascii(ascii_msg: str) -> list[int]:
     n = len(ascii_msg)
     if n % 2 != 0:
         raise BadEncoding("ASCII message has uneven number of characters.")
@@ -381,7 +382,7 @@ def decode_message_from_ascii(ascii_msg: str) -> List[int]:
     return b
 
 
-class AlarmPanelInterface(object):
+class AlarmPanelInterface:
     def __init__(self, dev_name: str, timeout_secs: float, logger: Any) -> None:
         self.dev_name = dev_name
         self.serial_interface = SerialInterface(
@@ -401,9 +402,9 @@ class AlarmPanelInterface(object):
         self.reset_pending_tx()
         self._consecutive_reconnects = 0
         self.message_handlers: dict[Any, list[Callable[[dict], None]]] = {}
-        for command_code, (command_id, command_name, parser_fn) in RX_COMMANDS.items():
+        for (command_id, command_name, parser_fn) in RX_COMMANDS.values():
             self.message_handlers[command_id] = []
-        self._active_troubles: Dict[Tuple[Any, ...], dict] = {}
+        self._active_troubles: dict[tuple[Any, ...], dict] = {}
         self._trouble_summary_logged: str = ""
         self._sync_trouble_to_panel()
 
@@ -472,7 +473,7 @@ class AlarmPanelInterface(object):
         self.tx_pending = None
         self.tx_num_attempts = 0
 
-    def send_message(self, msg: List[int], retry: bool = False) -> None:
+    def send_message(self, msg: list[int], retry: bool = False) -> None:
         """
         Send a message directly to the serial port.  Update pending TX
         state.  If *retry* is True, increment the attempts count,
@@ -481,7 +482,7 @@ class AlarmPanelInterface(object):
         self.tx_pending = msg.copy() if msg is not None else None  # type: ignore
         if retry:
             self.tx_num_attempts += 1
-            self.logger.warn(
+            self.logger.warning(
                 "Resending message, attempt %d: %r"
                 % (self.tx_num_attempts, encode_message_to_ascii(msg))
             )
@@ -506,7 +507,7 @@ class AlarmPanelInterface(object):
                 self.send_message(self.tx_pending, retry=True)
 
     # XXX include length bytes in the front?  YES
-    def enqueue_msg_for_tx(self, msg: List[int]) -> None:
+    def enqueue_msg_for_tx(self, msg: list[int]) -> None:
         """
         Put *msg* on the transmit queue, and append a checksum; *msg*
         is modified.
@@ -518,7 +519,7 @@ class AlarmPanelInterface(object):
         msg.append(compute_checksum(msg))
         self.tx_queue.put(msg)
 
-    def enqueue_synthetic_msg_for_rx(self, msg: List[int]) -> None:
+    def enqueue_synthetic_msg_for_rx(self, msg: list[int]) -> None:
         """
         Put *msg* on the 'fake' receive queue; it will be 'received'
         by this panel interface object.  The checksum will be
@@ -626,7 +627,7 @@ class AlarmPanelInterface(object):
 
     def _message_loop_once(
         self, loop_start_at: datetime, loop_last_print_at: datetime
-    ) -> Optional[datetime]:
+    ) -> datetime | None:
         # Two parts to loop body: 1) look for and handle any
         # incoming messages, and 2) send out any outgoing
         # messages.
@@ -723,9 +724,9 @@ class AlarmPanelInterface(object):
 
         return loop_last_print_at
 
-    def handle_message(self, msg: List[int]) -> None:
+    def handle_message(self, msg: list[int]) -> None:
         cmd1 = msg[1]
-        cmd2: Optional[int] = None
+        cmd2: int | None = None
         if len(msg) > 3:
             cmd2 = msg[2]
         # self.log("Handle message %r" % encode_message_to_ascii(msg))
@@ -824,12 +825,12 @@ class AlarmPanelInterface(object):
         self.enqueue_msg_for_tx(msg)
 
     def send_keypress(
-        self, keys: List[int], partition: int = 1, no_check: bool = False
+        self, keys: list[int], partition: int = 1, no_check: bool = False
     ) -> None:
         msg = build_keypress(keys, partition, area=0, no_check=True)
         self.enqueue_msg_for_tx(msg)
 
-    def arm_stay(self, option: Optional[str], partition: int = 1) -> None:
+    def arm_stay(self, option: str | None, partition: int = 1) -> None:
         if option is None:
             self.send_keypress([0x02], partition=partition)
         elif option == "silent":
@@ -837,7 +838,7 @@ class AlarmPanelInterface(object):
         elif option == "instant":
             self.send_keypress([0x02, 0x04], partition=partition)
 
-    def arm_away(self, option: Optional[str], partition: int = 1) -> None:
+    def arm_away(self, option: str | None, partition: int = 1) -> None:
         if option is None:
             self.send_keypress([0x03], partition=partition)
         elif option == "silent":
@@ -845,7 +846,7 @@ class AlarmPanelInterface(object):
         elif option == "instant":
             self.send_keypress([0x03, 0x04], partition=partition)
 
-    def send_keys(self, keys: List[str], group: bool, partition: int = 1) -> None:
+    def send_keys(self, keys: list[str], group: bool, partition: int = 1) -> None:
         msg = []
         for k in keys:
             a = list(KEYPRESS_CODES.keys())[list(KEYPRESS_CODES.values()).index(str(k))]

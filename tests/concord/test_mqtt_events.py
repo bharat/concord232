@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 from concord232.mqtt_events import (
@@ -24,7 +24,7 @@ def test_build_alarm_payload_schema_v1() -> None:
     }
     body = build_alarm_payload(
         decoded,
-        received_at=datetime(2026, 4, 13, 12, 0, 0, tzinfo=timezone.utc),
+        received_at=datetime(2026, 4, 13, 12, 0, 0, tzinfo=UTC),
     )
     assert body["schema_version"] == 1
     assert body["command_id"] == "ALARM"
@@ -33,7 +33,7 @@ def test_build_alarm_payload_schema_v1() -> None:
 
 
 def test_build_touchpad_payload_serializes_panel_timestamp() -> None:
-    ts = datetime(2026, 4, 13, 8, 30, 0, tzinfo=timezone.utc)
+    ts = datetime(2026, 4, 13, 8, 30, 0, tzinfo=UTC)
     decoded = {
         "command_id": "TOUCHPAD",
         "partition_number": 1,
@@ -44,7 +44,7 @@ def test_build_touchpad_payload_serializes_panel_timestamp() -> None:
     }
     body = build_touchpad_payload(
         decoded,
-        received_at=datetime(2026, 4, 13, 12, 0, 0, tzinfo=timezone.utc),
+        received_at=datetime(2026, 4, 13, 12, 0, 0, tzinfo=UTC),
     )
     assert body["panel_timestamp"] == "2026-04-13T08:30:00+00:00"
     assert body["display_text"] == "Sensor 07 Open"
@@ -68,7 +68,7 @@ def test_publish_alarm_uses_topic_prefix() -> None:
         "alarm_specific_type_code": 21,
         "event_specific_data": 0,
     }
-    fixed = datetime(2026, 4, 13, 12, 0, 0, tzinfo=timezone.utc)
+    fixed = datetime(2026, 4, 13, 12, 0, 0, tzinfo=UTC)
     with patch("concord232.mqtt_events._utc_now", return_value=fixed):
         pub.publish_alarm(decoded)
     mock_client.publish.assert_called_once()
@@ -104,7 +104,7 @@ def test_build_zone_payload_mirrors_rest_fields() -> None:
         "zone_text": "FRONT DOOR",
     }
     body = build_zone_payload(
-        zone, received_at=datetime(2026, 4, 13, 12, 0, 0, tzinfo=timezone.utc)
+        zone, received_at=datetime(2026, 4, 13, 12, 0, 0, tzinfo=UTC)
     )
     assert body["schema_version"] == 1
     assert body["partition"] == 1

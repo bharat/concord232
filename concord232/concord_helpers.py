@@ -3,16 +3,14 @@ Helper functions and exceptions for concord232, including hex/ascii conversion a
 """
 
 from datetime import timedelta
-from typing import Union
 
 
 class BadMessageException(Exception):
     """Raised when a message is malformed or invalid."""
 
-    pass
 
 
-def ascii_hex_to_byte(ascii_bytes: Union[str, list[str]]) -> int:
+def ascii_hex_to_byte(ascii_bytes: str | list[str]) -> int:
     """
     Convert two ASCII hex characters to a single byte integer.
     Args:

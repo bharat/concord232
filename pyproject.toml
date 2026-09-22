@@ -16,6 +16,21 @@ exclude = [
     "__pycache__",
 ]
 
+[tool.ruff.lint]
+# Pre-existing debt, ignored deliberately so CI stays green while it is
+# worked down. Each of these needs case-by-case judgment rather than an
+# automated fix; remove entries from this list as the code is cleaned up.
+ignore = [
+    "UP031",   # printf-style string formatting, 40+ sites
+    "DTZ005",  # naive datetime.now(), needs a timezone audit
+    "RUF012",  # mutable class defaults, needs ClassVar annotations
+    "BLE001",  # blind except in serial and HTTP retry loops
+    "PLW1510", # subprocess.run without check=
+    "S110",    # try-except-pass
+    "SIM115",  # open() outside a context manager
+    "YTT301",  # sys.version[0] in the legacy status_p3.py script
+]
+
 [tool.black]
 line-length = 88
 target-version = ["py312"]
