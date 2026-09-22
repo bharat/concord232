@@ -196,3 +196,74 @@ def test_make_zone_handler_prefers_merged_record() -> None:
     fallback = json.loads(client.publish.call_args_list[-1].args[1])
     assert fallback["number"] == 9
     assert fallback["name"] == ""
+
+
+def _run_setup_mqtt(mock_client: MagicMock) -> None:
+    import logging
+
+    from concord232 import main as main_mod
+
+    mock_mqtt_module = MagicMock()
+    mock_mqtt_module.Client.return_value = mock_client
+    ctrl = MagicMock()
+    with patch.object(main_mod, "mqtt", mock_mqtt_module):
+        main_mod._setup_mqtt(
+            ctrl,
+            host="broker.local",
+            port=1883,
+            username="",
+            password="",
+            topic_prefix="concord232",
+            client_id="concord232-test",
+            publish_touchpad=False,
+            publish_zones=False,
+            discovery_prefix="",
+            tls=False,
+            logger=logging.getLogger("test"),
+        )
+
+
+def test_setup_mqtt_publishes_birth_from_on_connect() -> None:
+    # The birth must come from the on_connect callback, not a one-shot
+    # startup publish: on_connect also fires on paho's automatic
+    # reconnects, which is what replaces the broker's retained last-will
+    # "offline" after a broker restart.
+    mock_client = MagicMock()
+    _run_setup_mqtt(mock_client)
+
+    assert mock_client.on_connect is not None
+    status_calls = [
+        c
+        for c in mock_client.publish.call_args_list
+        if c.args[0] == "concord232/status"
+    ]
+    assert not status_calls, "birth must not be published before CONNACK"
+
+    # Initial connect publishes the retained birth.
+    mock_client.on_connect(mock_client, None, {}, 0)
+    args, kwargs = mock_client.publish.call_args
+    assert args[0] == "concord232/status"
+    assert json.loads(args[1])["state"] == "online"
+    assert kwargs.get("retain") is True
+
+    # A reconnect publishes it again.
+    mock_client.on_connect(mock_client, None, {}, 0)
+    status_calls = [
+        c
+        for c in mock_client.publish.call_args_list
+        if c.args[0] == "concord232/status"
+    ]
+    assert len(status_calls) == 2
+
+
+def test_setup_mqtt_no_birth_on_refused_connect() -> None:
+    mock_client = MagicMock()
+    _run_setup_mqtt(mock_client)
+
+    mock_client.on_connect(mock_client, None, {}, 5)
+    status_calls = [
+        c
+        for c in mock_client.publish.call_args_list
+        if c.args[0] == "concord232/status"
+    ]
+    assert not status_calls

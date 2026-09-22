@@ -72,13 +72,24 @@ def _setup_mqtt(
     client.will_set(
         publisher.status_topic, publisher.offline_payload(), qos=1, retain=True
     )
+
+    def _on_connect(_client: Any, _userdata: Any, _flags: Any, rc: Any) -> None:
+        # Fires on every connect, including paho's automatic reconnects.
+        # The birth must be republished here: a broker disconnect publishes
+        # the retained last-will "offline", and a silent reconnect would
+        # otherwise leave it in place forever while zone states keep flowing.
+        if rc == 0:
+            publisher.publish_online()
+        else:
+            logger.warning("MQTT connect refused rc=%s", rc)
+
+    client.on_connect = _on_connect
     try:
         client.connect(host, port, 60)
     except Exception:
         logger.exception("MQTT connect failed; continuing without MQTT")
         return
     client.loop_start()
-    publisher.publish_online()
     ctrl.register_message_handler("ALARM", publisher.publish_alarm)
     if publish_touchpad:
         ctrl.register_message_handler("TOUCHPAD", publisher.publish_touchpad)
