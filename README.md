@@ -1,5 +1,20 @@
 # GE Concord 4 RS232 Automation Module Interface Library and Server
 
+## Fork status
+
+This fork is actively maintained and is where new development lands. The
+upstream repositories are dormant: JasonCarter80/concord232 (the original,
+and the source of the `concord232` package on PyPI) has been quiet since
+the 0.15.1 release in August 2024, and r26D/concord232 has open pull
+requests without responses. `main` here carries everything, including
+changes still pending upstream as r26D PRs #2 (server container image),
+#3 (HTTP client timeouts), and #4 (retained per-zone MQTT states with
+Home Assistant discovery, plus an MQTT birth-on-reconnect fix). If those
+PRs are ever merged upstream, this fork will reconverge.
+
+A multi-arch server image is published on every push to `main` or
+`docker-image`: `ghcr.io/bharat/concord232`.
+
 This is a tool to let you interact with your GE Concord 4 alarm panel via
 the RS232 Automation module.
 
