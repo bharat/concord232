@@ -2,7 +2,7 @@ import sys
 import time
 import traceback
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
 
 import serial
@@ -141,6 +141,34 @@ def apply_alarm_to_trouble_store(store: dict, d: dict) -> bool:
             store[key] = d
             return True
     return False
+
+
+def build_arming_change(
+    decoded: dict,
+    user_names: dict[int, str] | None = None,
+    *,
+    received_at: datetime | None = None,
+) -> dict[str, Any]:
+    """Summarize a decoded ARM_LEVEL message: who changed the arming level.
+
+    ``user_name`` is added only when the user number has an entry in
+    *user_names* (the optional ``[users]`` config section). Key fobs are not
+    looked up: for them the panel reports the fob, not a user code.
+    """
+    when = received_at if received_at is not None else datetime.now(UTC)
+    user_number = decoded.get("user_number_low")
+    is_keyfob = bool(decoded.get("is_keyfob"))
+    change: dict[str, Any] = {
+        "user_number": user_number,
+        "user_info": decoded.get("user_info"),
+        "is_keyfob": is_keyfob,
+        "arming_level": decoded.get("arming_level"),
+        "arming_level_code": decoded.get("arming_level_code"),
+        "at": when.astimezone(UTC).isoformat(),
+    }
+    if not is_keyfob and user_names and user_number in user_names:
+        change["user_name"] = user_names[user_number]
+    return change
 
 
 class CommException(Exception):
@@ -395,6 +423,11 @@ class AlarmPanelInterface:
         self.partitions: dict[str, Any] = {}
         self.zones: dict[str, Any] = {}
         self.users: dict[str, Any] = {}
+        # Optional display names for user numbers ([users] in config.ini).
+        self.user_names: dict[int, str] = {}
+        # Latest arming level change per partition number. In memory only:
+        # empty after a restart until the panel reports the next change.
+        self.last_arming_changes: dict[int, dict[str, Any]] = {}
         self.master_pin: str = "0520"
         self.display_messages: list[Any] = []
         self.tx_queue: Any = Queue.Queue()
@@ -407,6 +440,13 @@ class AlarmPanelInterface:
         self._active_troubles: dict[tuple[Any, ...], dict] = {}
         self._trouble_summary_logged: str = ""
         self._sync_trouble_to_panel()
+        # Registered first, so later ARM_LEVEL handlers (MQTT) see the record.
+        self.register_message_handler("ARM_LEVEL", self._record_arming_change)
+
+    def _record_arming_change(self, decoded: dict) -> None:
+        self.last_arming_changes[decoded["partition_number"]] = build_arming_change(
+            decoded, self.user_names
+        )
 
     def _sync_trouble_to_panel(self) -> None:
         detail = _detail_from_trouble_store(self._active_troubles)
