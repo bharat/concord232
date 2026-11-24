@@ -48,6 +48,14 @@ def show_partition(partition: dict[str, Any]) -> dict[str, Any]:
     Returns:
         dict: JSON-serializable partition info.
     """
+    # Latest arming level change (who armed or disarmed), None until the
+    # panel reports one. isinstance guards against a controller without it.
+    changes = getattr(CONTROLLER, "last_arming_changes", None)
+    last_arming_change = (
+        changes.get(partition["partition_number"])
+        if isinstance(changes, dict)
+        else None
+    )
     return {
         "number": partition["partition_number"],
         "area": partition["area_number"],
@@ -62,6 +70,7 @@ def show_partition(partition: dict[str, Any]) -> dict[str, Any]:
             if CONTROLLER is not None and hasattr(CONTROLLER, "zones")
             else 0
         ),
+        "last_arming_change": last_arming_change,
     }
 
 

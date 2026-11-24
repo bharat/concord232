@@ -8,7 +8,11 @@ import threading
 from typing import Any
 
 from concord232 import concord
-from concord232.mqtt_events import PanelMqttPublisher, make_zone_handler
+from concord232.mqtt_events import (
+    PanelMqttPublisher,
+    make_arming_change_handler,
+    make_zone_handler,
+)
 from concord232.server import api
 
 try:
@@ -17,6 +21,25 @@ except ImportError:
     mqtt = None  # type: ignore[assignment]
 
 LOG_FORMAT = "%(asctime)-15s %(module)s %(levelname)s %(message)s"
+
+
+def _load_user_names(
+    config: configparser.ConfigParser, logger: logging.Logger
+) -> dict[int, str]:
+    """Read the optional [users] section: user number = display name."""
+    names: dict[int, str] = {}
+    if "users" not in config:
+        return names
+    # raw=True: a "%" in a display name must not trip interpolation.
+    for key, value in config.items("users", raw=True):
+        try:
+            number = int(key)
+        except ValueError:
+            logger.warning("Ignoring [users] entry %r: not a user number", key)
+            continue
+        if value.strip():
+            names[number] = value.strip()
+    return names
 
 
 def _setup_mqtt(
@@ -91,6 +114,9 @@ def _setup_mqtt(
         return
     client.loop_start()
     ctrl.register_message_handler("ALARM", publisher.publish_alarm)
+    ctrl.register_message_handler(
+        "ARM_LEVEL", make_arming_change_handler(publisher, ctrl.last_arming_changes)
+    )
     if publish_touchpad:
         ctrl.register_message_handler("TOUCHPAD", publisher.publish_touchpad)
     if publish_zones:
@@ -313,6 +339,7 @@ For more information, see: https://github.com/JasonCarter80/concord232
 
     try:
         ctrl = concord.AlarmPanelInterface(serial, 0.25, LOG)
+        ctrl.user_names = _load_user_names(config, LOG)
         api.CONTROLLER = ctrl
         if mqtt_host:
             _setup_mqtt(

@@ -111,6 +111,26 @@ def make_zone_handler(
     return _handle
 
 
+def make_arming_change_handler(
+    publisher: PanelMqttPublisher,
+    last_arming_changes: Mapping[int, Mapping[str, Any]],
+) -> Callable[[Mapping[str, Any]], None]:
+    """Build an ARM_LEVEL message handler.
+
+    Publishes the record the panel interface stored for the partition (the
+    same object ``/partitions`` serves as ``last_arming_change``), so REST
+    and MQTT always agree, including the timestamp.
+    """
+
+    def _handle(decoded: Mapping[str, Any]) -> None:
+        partition = decoded.get("partition_number")
+        change = last_arming_changes.get(partition) if partition is not None else None
+        if change is not None:
+            publisher.publish_arming_change(partition, change)
+
+    return _handle
+
+
 class PanelMqttPublisher:
     """Publishes panel decode dicts to MQTT topics under a prefix."""
 
@@ -173,6 +193,15 @@ class PanelMqttPublisher:
         )
         if self._discovery_prefix:
             self._publish_zone_discovery(payload)
+
+    def publish_arming_change(self, partition: int, change: Mapping[str, Any]) -> None:
+        """Publish who last changed a partition's arming level (retained)."""
+        payload = {"schema_version": SCHEMA_VERSION, **change}
+        self._publish_json(
+            self._topic("partition", str(partition), "arming_change"),
+            payload,
+            retain=True,
+        )
 
     def _publish_zone_discovery(self, payload: Mapping[str, Any]) -> None:
         """Publish a Home Assistant MQTT discovery config for a zone, once."""

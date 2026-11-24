@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Expose which user armed or disarmed: `/partitions` entries gain a `last_arming_change` object (`user_number`, `user_info`, `is_keyfob`, `arming_level`, `arming_level_code`, `at`; `null` until the first change, in memory only). With MQTT enabled the same object is published retained on `{prefix}/partition/{n}/arming_change`. An optional `[users]` section in `config.ini` maps user numbers to display names and adds `user_name`. Existing fields and command handling are unchanged.
 - Docs: add `docs-site/docs/ser2net-8o1-wiring.md` (8O1, telnet/RFC2217 ser2net, wiring checklist); link from RFC2217 testing doc.
 
 ## [0.15.11] - 2026-03-31
