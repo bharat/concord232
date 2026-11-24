@@ -201,6 +201,63 @@ Below are the available endpoints and their usage:
 | `/equipment`  | GET    | Request all equipment data                                     |
 | `/all_data`   | GET    | Request dynamic data refresh                                   |
 
+### Who armed or disarmed (`last_arming_change`)
+
+Each entry in `/partitions` carries a `last_arming_change` object describing
+the most recent arming level change the panel reported for that partition.
+It is `null` until the first change after the server starts: the value is
+kept in memory only and is not restored after a restart.
+
+```json
+{
+  "number": 1,
+  "area": 0,
+  "arming_level": "Off",
+  "arming_level_code": 1,
+  "partition_text": "",
+  "zones": 12,
+  "last_arming_change": {
+    "user_number": 5,
+    "user_info": "Regular User 5",
+    "user_name": "User 5",
+    "is_keyfob": false,
+    "arming_level": "Off",
+    "arming_level_code": 1,
+    "at": "2026-11-23T12:00:00+00:00"
+  }
+}
+```
+
+| Field               | Meaning                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `user_number`       | User number reported by the panel (low byte of the arming level message).                        |
+| `user_info`         | Decoded description, e.g. `Regular User 5`, `System Master Code`, `Quick Arm`, `Key Switch Arm`. |
+| `user_name`         | Display name from the optional `[users]` config section. Omitted when there is no entry.        |
+| `is_keyfob`         | `true` when the change came from a key fob.                                                     |
+| `arming_level`      | Name of the new arming level, e.g. `Off`, `Home/Perimeter`, `Away/Full`.                         |
+| `arming_level_code` | Numeric arming level (1 off, 2 stay, 3 away).                                                   |
+| `at`                | UTC ISO 8601 time at which the server received the change.                                      |
+
+When MQTT is enabled (`--mqtt-host` or `[mqtt] host`), the same object, plus
+`schema_version`, is published retained on
+`<topic_prefix>/partition/<n>/arming_change` every time the panel reports an
+arming level change. No extra option is needed. The broker keeps the retained
+message across a server restart, while `last_arming_change` in the HTTP API
+starts again at `null`.
+
+To attach display names to user numbers, add an optional `[users]` section to
+the config file:
+
+```
+[users]
+1 = User 1
+2 = User 2
+```
+
+Entries whose key is not a number are ignored with a warning. Key fob changes
+(`is_keyfob: true`) are never given a `user_name`: for those the panel reports
+the fob, not a user code.
+
 ### `/command` endpoint
 
 - **Arm the system:**
